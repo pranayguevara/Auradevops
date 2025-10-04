@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "us-east-1"             // Your AWS region (Mumbai)
-        AWS_ACCOUNT_ID = "034362045354"       // Replace with your AWS account ID
-        ECR_REPO = "project/flaskapp"             // Your ECR repo name
-        IMAGE_TAG = "latest"                  // Or use BUILD_NUMBER for unique tags
+        AWS_REGION = "us-east-1"
+        AWS_ACCOUNT_ID = "034362045354"
+        ECR_REPO = "flaskapp"    // fixed repo name (no slashes)
+        IMAGE_TAG = "latest"
     }
 
     stages {
@@ -17,30 +17,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh """
-                    echo "Building Docker Image..."
-                    docker build -t $ECR_REPO:$IMAGE_TAG .
-                    """
-                }
+                sh "docker build -t $ECR_REPO:$IMAGE_TAG ."
             }
         }
 
-        stage('Login to AWS ECR') {
+        stage('Login & Push to ECR') {
             steps {
-                script {
+                withAWS(region: "${AWS_REGION}", credentials: 'aws-creds') {
                     sh """
                     aws ecr get-login-password --region $AWS_REGION | \
                     docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-                    """
-                }
-            }
-        }
 
-        stage('Tag & Push Docker Image to ECR') {
-            steps {
-                script {
-                    sh """
                     docker tag $ECR_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
                     docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
                     """
@@ -50,9 +37,8 @@ pipeline {
 
         stage('Deploy to ECS') {
             steps {
-                script {
+                withAWS(region: "${AWS_REGION}", credentials: 'aws-creds') {
                     sh """
-                    echo "Updating ECS service..."
                     aws ecs update-service \
                         --cluster my-ecs-cluster \
                         --service my-ecs-service \
