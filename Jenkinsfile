@@ -23,7 +23,7 @@ pipeline {
 
         stage('Login & Push to ECR') {
             steps {
-                withAWS(region: "${AWS_REGION}", credentials: 'aws-creds') {
+                withAWS(region: "${AWS_REGION}", credentials: 'jenkins-aws') {
                     sh """
                     aws ecr get-login-password --region $AWS_REGION | \
                     docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -37,10 +37,10 @@ pipeline {
 
         stage('Deploy to ECS') {
             steps {
-                withAWS(region: "${AWS_REGION}", credentials: 'aws-creds') {
+                withAWS(region: "${AWS_REGION}", credentials: 'jenkins-aws') {
                     sh """
                     aws ecs update-service \
-                        --cluster my-ecs-cluster \
+                        --cluster unfinished-bird-lzpx7b \
                         --service my-ecs-service \
                         --force-new-deployment \
                         --region $AWS_REGION
