@@ -5,11 +5,8 @@ pipeline{
         githubPush()
     }
 
-    parameters{
-        string(name: 'aws_region', defaultValue: 'us-east-1', description: 'aws-region')
-    }
-
     environment {
+        aws_region='us-east-1'
         aws_id='034362045354'
         aws_ecr_repo='flaskapp'
         image_version='latest'
