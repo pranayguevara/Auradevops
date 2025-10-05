@@ -41,16 +41,12 @@ GitHub repository
 #### 2️⃣ Jenkins Setup
 
 Install Jenkins plugins:
-
-Pipeline
-
-Amazon EC2 Plugin (optional for agents)
-
-AWS Steps Plugin
+- Pipeline
+- Amazon EC2 Plugin (optional for agents)
+- AWS Steps Plugin
 
 Configure Jenkins credentials:
-
-aws-creds → your AWS Access Key & Secret
+- aws-creds → your AWS Access Key & Secret
 
 Add githubPush() trigger in Jenkinsfile
 
@@ -64,22 +60,18 @@ Ensure ECS Cluster & Service are created (Fargate mode).
 
 Go to Repo → Settings → Webhooks → Add Webhook
 
-Payload URL:
+- Payload URL:
+  - http://<your-jenkins-url>/github-webhook/
 
-http://<your-jenkins-url>/github-webhook/
+- Content type: application/json
 
-Content type: application/json
-
-Trigger on: Push events
+- Trigger on: Push events
 
 ### 🚀 Deployment
 
 Push changes to main branch under /app/ directory.
 
 Jenkins pipeline automatically:
-
-Builds Docker image
-
-Pushes to AWS ECR
-
-Deploys updated task on ECS Fargate
+- Builds Docker image
+- Pushes to AWS ECR
+- Deploys updated task on ECS Fargate
