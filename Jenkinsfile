@@ -78,7 +78,7 @@ pipeline{
                         --cluster ${ecs_cluster} \
                         --service flaskapp \
                         --force-new-deployment \
-                        --region $AWS_REGION
+                        --region ${AWS_REGION}
                     """
                 }
             }
