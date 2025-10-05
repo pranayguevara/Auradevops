@@ -1,47 +1,85 @@
-pipeline {
+pipeline{
     agent any
 
-    environment {
-        AWS_REGION = "us-east-1"
-        AWS_ACCOUNT_ID = "034362045354"
-        ECR_REPO = "flaskapp"    // fixed repo name (no slashes)
-        IMAGE_TAG = "latest"
+    triggers {
+        githubPush()
     }
 
-    stages {
-        stage('Checkout Code') {
-            steps {
+    parameters{
+        string(name: 'aws_region', defaultValue: 'us-east-1', description: 'aws-region')
+    }
+
+    environment {
+        aws_id='034362045354'
+        aws_ecr_repo='flaskapp'
+        image_version='latest'
+        ecs_cluster='honorable-bird-5ay4kd'
+    }
+
+    stages{
+        stage('checkout'){
+            steps{
                 git branch: 'main', url: 'https://github.com/pranayguevara/Auradevops.git'
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t $ECR_REPO:$IMAGE_TAG ."
+        stage('Build Docker Image'){
+            when {
+                branch "main"
+                changeset "app/**"
             }
-        }
-
-        stage('Login & Push to ECR') {
-            steps {
-                withAWS(region: "${AWS_REGION}", credentials: 'jenkins-aws') {
+            steps{
+                script{
                     sh """
-                    aws ecr get-login-password --region $AWS_REGION | \
-                    docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-                    docker tag $ECR_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
-                    docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                    echo "Building Docker Image"
+                    docker build -t ${aws_ecr_repo}:${image_version} .
                     """
                 }
             }
         }
 
-        stage('Deploy to ECS') {
-            steps {
-                withAWS(region: "${AWS_REGION}", credentials: 'jenkins-aws') {
+        stage('login to ECR'){
+            when {
+                branch "main"
+                changeset "app/**"
+            }
+            steps{
+                withAWS(credentials: 'jenkins-aws'){
+                sh """
+                aws ecr get-login-password --region ${aws_region} | \
+                docker login --username AWS --password-stdin ${aws_id}.dkr.ecr.${aws_region}.amazonaws.com
+                """
+                }
+            }
+        }
+
+        stage('Push image to ECR'){
+            when {
+                branch "main"
+                changeset "app/**"
+            }
+            steps{
+                script{
                     sh """
+                    docker tag ${aws_ecr_repo}:${image_version} ${aws_id}.dkr.ecr.${aws_region}.amazonaws.com/${aws_ecr_repo}:${image_version}
+                    docker push ${aws_id}.dkr.ecr.${aws_region}.amazonaws.com/${aws_ecr_repo}:${image_version}
+                    """
+                }
+            }
+        }
+
+        stage('Deploying to ECS'){
+            when {
+                branch "main"
+                changeset "app/**"
+            }
+            steps {
+                withAWS(credentials: 'jenkins-aws'){
+                    sh """
+                    echo "Updating ECS service..."
                     aws ecs update-service \
-                        --cluster unfinished-bird-lzpx7b \
-                        --service my-ecs-service \
+                        --cluster ${ecs_cluster} \
+                        --service flaskapp \
                         --force-new-deployment \
                         --region $AWS_REGION
                     """
