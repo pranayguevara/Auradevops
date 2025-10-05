@@ -7,7 +7,7 @@ pipeline{
 
     environment {
         aws_region='us-east-1'
-        aws_id='034362045354'
+        aws_id='<your-account-id>'
         aws_ecr_repo='flaskapp'
         image_version='latest'
         ecs_cluster='honorable-bird-5ay4kd'
