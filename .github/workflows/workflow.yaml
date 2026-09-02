@@ -3,6 +3,8 @@ name: Basic CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   run-checks:
@@ -11,8 +13,18 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
 
-      - name: Grant execute permissions
-        run: chmod +x ./check_script.sh
+      - name: Install dependencies
+        run: |
+          echo "looking for rquirements.txt"
+          pip install ./src/requirements.txt
 
-      - name: Run the script
-        run: ./check_script.sh 
+      - name: Lint checks
+        run: echo "Run the linting checks"
+
+      - name: Grant permissions and execute
+        run: |
+          chmod +x ./check_script.sh
+          ./check_script.sh
+
+      - name: Notify
+        run: echo "Completed run-check Job"
