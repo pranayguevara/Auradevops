@@ -31,5 +31,14 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: docker-images-app2
+          name: docker-images-app1
           path: dist/
+      - name: testing the artifact
+        run: |
+          echo "Testing the file exists or not"
+          if [[ -f "dist/buildfile.txt" ]]; then
+              echo "File artifact is there"
+          else
+              echo "File not there"
+              exit 1
+          fi
