@@ -13,10 +13,12 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
 
+      - name: Logger
+        run : echo "Logging from now"
+
       - name: Install dependencies
         run: |
           echo "looking for rquirements.txt"
-          pip install ./src/requirements.txt
 
       - name: Lint checks
         run: echo "Run the linting checks"
