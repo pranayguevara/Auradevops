@@ -16,7 +16,6 @@ jobs:
       - name: Install dependencies
         run: |
           echo "looking for rquirements.txt"
-          pip install ./src/requirements.txt
 
       - name: Lint checks
         run: echo "Run the linting checks"
