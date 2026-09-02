@@ -42,3 +42,15 @@ jobs:
               echo "File not there"
               exit 1
           fi
+  secret_vars:
+    runs-on: ubuntu-latest
+    env:
+      environment: "testing"
+      test_secret: ${{ secrets.MY_TEST_SECRET }}
+    steps:
+      - name: Echo open variables
+        run: |
+          echo "This is open variable and seen"
+          echo "$environment"
+      - name: Echo secret variables
+        run: echo "Secret variable value is $test_secret"
