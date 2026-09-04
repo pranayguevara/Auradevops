@@ -78,7 +78,7 @@ jobs:
         run: echo "Running in $APP_ENV environment"
 
       - name: Try to print the secret (should show ***)
-        run: echo "Secret is: $SECRET_VALUE"
+        run: echo "Secret is $SECRET_VALUE"
 
   # ---------------------------------------------------------
   # JOB 3: DEPLOY
