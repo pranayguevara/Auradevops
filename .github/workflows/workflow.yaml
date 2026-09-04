@@ -1,5 +1,6 @@
-name: Basic CI
+name: Full CI Pipeline (Practice)
 
+# Lesson 2: trigger on both push to main AND pull requests targeting main
 on:
   push:
     branches: [main]
@@ -7,50 +8,95 @@ on:
     branches: [main]
 
 jobs:
+
+  # ---------------------------------------------------------
+  # JOB 1: BUILD
+  # ---------------------------------------------------------
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: Build the files
+
+      - name: Install dependencies
+        run: echo "Pretending to install dependencies..."
+
+      - name: Lint
+        run: echo "Lint passed ✅"
+
+      - name: Create build output
         run: |
-          mkdir -p app/src/
-          cd app/src/
-          echo "This is a basic file" > buildfile.txt
-      - name: Upload artifacts
+          mkdir -p dist
+          echo "This is a fake build output" > dist/app-build.txt
+          echo "Version: 1.0.${{ github.run_number }}" >> dist/app-build.txt
+
+      # Lesson 3: upload the build output so other jobs can use it
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-images-app1
-          path: app/src/
+          name: build-output
+          path: dist/
+          retention-days: 7   # override the 90-day default
+
+  # ---------------------------------------------------------
+  # JOB 2: TEST
+  # runs only after 'build' finishes (needs:), on its own fresh VM
+  # ---------------------------------------------------------
   test:
     runs-on: ubuntu-latest
     needs: build
+    env:
+      APP_ENV: staging                                # plain env var
+      SECRET_VALUE: ${{ secrets.MY_TEST_SECRET }}      # Lesson 4: masked in logs automatically
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: Download artifacts
+
+      # Lesson 3: pull down what 'build' produced (jobs don't share files by default)
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: docker-images-app1
+          name: build-output
           path: dist/
-      - name: testing the artifact
+
+      - name: Verify build output exists
         run: |
-          echo "Testing the file exists or not"
-          if [[ -f "dist/buildfile.txt" ]]; then
-              echo "File artifact is there"
+          cat dist/app-build.txt
+          if [ -f "dist/app-build.txt" ]; then
+            echo "Build artifact found ✅"
           else
-              echo "File not there"
-              exit 1
+            echo "Build artifact missing ❌"
+            exit 1
           fi
-  secret_vars:
-    runs-on: ubuntu-latest
-    env:
-      environment: "testing"
-      test_secret: ${{ secrets.MY_TEST_SECRET }}
-    steps:
-      - name: Echo open variables
+
+      - name: Run check script
         run: |
-          echo "This is open variable and seen"
-          echo "$environment"
-      - name: Echo secret variables
-        run: echo "Secret variable value is $test_secret"
+          chmod +x check_script.sh
+          ./check_script.sh
+
+      - name: Show env var (safe)
+        run: echo "Running in $APP_ENV environment"
+
+      - name: Try to print the secret (should show ***)
+        run: echo "Secret is: $SECRET_VALUE"
+
+  # ---------------------------------------------------------
+  # JOB 3: DEPLOY
+  # runs after test passes, proves AWS auth works end-to-end
+  # ---------------------------------------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    environment: Production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+      - name: Configure AWS credentials
+        run : |
+          echo "Pretending to configure AWS credentials..."
+          echo "And deploying the build artifact..."
